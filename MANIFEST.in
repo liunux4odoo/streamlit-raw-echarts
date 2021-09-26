@@ -1,0 +1,2 @@
+recursive-include streamlit_raw_echarts/frontend *
+prune streamlit_raw_echarts/frontend/maps

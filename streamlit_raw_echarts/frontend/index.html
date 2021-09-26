@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Streamlit Echarts">
+    <title>Awesome Echarts</title>
+</head>
+<body>
+    <noscript>you need to enable javascript to run this app.</noscript>
+    <div id='basic_js'>
+        <script type="text/javascript" src="./js/jquery.min.js"></script>
+        <script type="text/javascript" src="./js/lodash.min.js"></script>
+        <script type="text/javascript" src="./js/echarts.min.js"></script>
+        <script type="text/javascript" src="./js/utils.js"></script>
+        <script type="text/javascript" src="./js/streamlit.component.js"></script>
+    </div>
+    <div id='map_js'></div>
+    <div id="mychart" class="chart-container" style="width:600px;height:400px;"/>
+    <script>
+        var loaded_js=[];
+        var theme='white';
+        var renderer='canvas';
+        var lock_render=false;
+
+        function initChart(width=600,height=400,theme='white',renderer='canvas'){
+            var chart=echarts.init(document.getElementById("mychart"),theme,{"renderer":renderer});
+            setSize(width,height,chart);
+            return chart;
+        }
+
+        function updateChart(option,notMerge=false,lazyUpdate=False,width,height,extra_js,extra_maps,events,returnData){
+            if(lock_render){
+                lock_render=false;
+                return;
+            }
+
+            if(!!extra_js){
+                for(var i=0;i<extra_js.length;i++){
+                    if(loaded_js.includes(extra_js[i])) continue;
+                    loaded_js.push(extra_js[i]);
+                    if (extra_js[i].startsWith('maps/')){
+                        loadMap('./'+extra_js[i]);                   
+                    }
+                    else{
+                        loadJs('./js/'+extra_js[i]);
+                    }
+                }
+            }
+
+            if(!!extra_maps){
+                for(var i=0;i<extra_maps.length;i++){
+                    echarts.registerMap(extra_maps[i].mapName,extra_maps[i].geoJSON,extra_maps[i].specialAreas);
+                }
+            }
+
+            option=convertJsCode(option);
+            if(!!option) mychart.setOption(option,notMerge,lazyUpdate);
+            if(!!width || !!height) setSize(width,height);
+
+            if(!!events && mychart){
+                for(var x in events){
+                    mychart.off(x);
+                    mychart.on(x,new Function('return '+events[x])());
+                }
+            }
+
+            if(_.isObject(returnData) && mychart){
+                lock_render=true;
+                sendDataToPython(mychart.getDataURL(
+                    {
+                        type:returnData.type || 'png',
+                        pixelRatio:returnData.pixelRatio || returnData.pr || 2,
+                        backgroundColor:returnData.backgroundColor || returnData.bc || '#fff',
+                        excludeComponents:returnData.excludeComponents || returnData.ec || ['toolbox']
+                    }));
+            }
+        }
+
+        function setSize(width,height,c){
+            if(!!!c) c=mychart;
+
+            if(!!width){
+                if($.isNumeric(width)) width=width+'px';
+                c.getDom().style.width=width;
+            }
+            if(!!height){
+                if($.isNumeric(height)) height=height+'px';
+                setFrameHeight(height);
+                c.getDom().style.height=height;
+            }
+            c.resize();
+        }
+
+        function onDataFromPython(args){
+            var reInit=false;
+            if(args.theme && args.theme!=theme){
+                theme=args.theme;
+                loadJs('./themes/'+theme+'.js');
+                reInit=true;
+            }
+            if(args.renderer && args.renderer!=renderer){
+                renderer=args.renderer;
+                reInit=true;
+            }
+            if(reInit || !mychart){
+                var width=600;
+                var height=400;
+                if(mychart){
+                    width=mychart.getWidth();
+                    height=mychart.getHeight();
+                }
+                mychart=initChart(width,height,theme,renderer);
+            }
+            updateChart(args.option,args.notMerge,args.lazyUpdate,args.width,args.height,args.extra_js,args.extra_maps,args.events,args.returnData);
+        }
+
+        window.addEventListener('resize',function(){
+            window.setTimeout(function(){
+                if(mychart) mychart.resize();
+            },100);
+        });
+
+    var mychart;//=initChart();
+    initStreamlit();
+</script>
+</body>
+</html>
