@@ -8,7 +8,7 @@ def readme():
 
 setuptools.setup(
     name='streamlit-raw-echarts',
-    version='0.1.1',
+    version='0.1.2',
     author='liunux',
     author_email='liunux@qq.com',
     description='Echarts component for streamlit supporting raw Echarts api.',

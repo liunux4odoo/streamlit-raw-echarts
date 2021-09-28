@@ -40,23 +40,23 @@ def st_echarts(option,
         if map:
             maps.add(map)
 
-        type_=s.get('type')
+        type_ = s.get('type')
 
-        if type_=='wordClound':
-        	extra_js.add('echarts-wordcloud.min.js')
-        elif type_=='liquidFill':
-        	extra_js.add('echarts-liquidfill.min.js')
+        if type_ == 'wordClound':
+            extra_js.add('echarts-wordcloud.min.js')
+        elif type_ == 'liquidFill':
+            extra_js.add('echarts-liquidfill.min.js')
         elif type_.endswith('3D'):
-        	extra_js.add('echarts-gl.min.js')
+            extra_js.add('echarts-gl.min.js')
         # todo: support mapglobe/options
 
     if maps:
         MAPS.load_data()
-    
+
     extra_js = list(extra_js | set([MAPS[x] for x in maps]))
 
     # if theme:
-    # 	extra_js.append('themes/{}.js'.format(theme))
+    #   extra_js.append('themes/{}.js'.format(theme))
 
     if not isinstance(extra_maps, list):
         extra_maps = [extra_maps]
@@ -95,20 +95,22 @@ def CustomMap(self, map_name, geo_json, special_areas=None):
     }
 
 
-class CityCoords:
-    _ins = None
+class Singleton(type):
+    __ins = {}
 
-    def __new__(cls):
-        if cls._ins is None:
-            cls._ins = super().__new__(cls)
-        return cls._ins
+    def __call__(cls, *args, **kw):
+        if cls not in cls.__ins:
+            cls.__ins[cls] = super().__call__(*args, **kw)
+        return cls.__ins[cls]
 
+
+class CityCoords(metaclass=Singleton):
     def __init__(self):
         self.data = {}
 
     def load_data(self, refresh=False):
         if not self.data or refresh:
-            with ROOT_PATH.joinpath('frontend', 'data', 'city_coordinates.json').open(encoding = 'utf-8') as fp:
+            with ROOT_PATH.joinpath('frontend', 'data', 'city_coordinates.json').open(encoding='utf-8') as fp:
                 self.data.update(json.load(fp))
         return self
 
@@ -123,21 +125,14 @@ class CityCoords:
         self.data.update(d, **kw)
 
 
-class Maps:
-    _ins = None
-
-    def __new__(cls):
-        if cls._ins is None:
-            cls._ins = super().__new__(cls)
-        return cls._ins
-
+class Maps(metaclass=Singleton):
     def __init__(self):
         self.cn = {}
         self.en = {}
 
     def load_data(self, refresh=False):
         if not self.cn or refresh:
-            with ROOT_PATH.joinpath('frontend', 'data', 'map_filename.json').open(encoding = 'utf-8') as fp:
+            with ROOT_PATH.joinpath('frontend', 'data', 'map_filename.json').open(encoding='utf-8') as fp:
                 for k, v in json.load(fp).items():
                     if v[0].startswith('maps/'):
                         en = v[0].replace('maps/', '')
