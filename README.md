@@ -65,8 +65,22 @@ with st.echo('below'):
                 'label':{'show':False},
                 'roam':True,
                 'data':[
-                    {'name':'China','value':150,'label':{'show':True,'formatter':JsCode('function(p){return p.data.name+":"+p.value;}')}},
-                    {'name':'United States','value':200,'label':{'show':True,'formatter':JsCode('function(p){return p.data.name+":"+p.value;}')}},
+                    {
+                        'name':'China',
+                        'value':150,
+                        'label':{
+                            'show':True,
+                            'formatter':JsCode('function(p){return p.data.name+":"+p.value;}')
+                            }
+                    },
+                    {
+                        'name':'United States',
+                        'value':200,
+                        'label':{
+                            'show':True,
+                            'formatter':JsCode('function(p){return p.data.name+":"+p.value;}')
+                            }
+                    },
                     {'name':'Brazil','value':100},
                 ]
             }
